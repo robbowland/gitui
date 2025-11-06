@@ -66,11 +66,17 @@ pub fn title_diff(_key_config: &SharedKeyConfig) -> String {
 pub fn title_index(_key_config: &SharedKeyConfig) -> String {
 	"Staged Changes".to_string()
 }
+#[cfg(not(feature = "disable-log-files-tabs"))]
 pub fn tab_status(key_config: &SharedKeyConfig) -> String {
 	format!(
 		"Status [{}]",
 		key_config.get_hint(key_config.keys.tab_status)
 	)
+}
+
+#[cfg(feature = "disable-log-files-tabs")]
+pub fn tab_status(_key_config: &SharedKeyConfig) -> String {
+	"Status".to_string()
 }
 pub fn tab_log(key_config: &SharedKeyConfig) -> String {
 	format!("Log [{}]", key_config.get_hint(key_config.keys.tab_log))
@@ -81,17 +87,30 @@ pub fn tab_files(key_config: &SharedKeyConfig) -> String {
 		key_config.get_hint(key_config.keys.tab_files)
 	)
 }
+#[cfg(not(feature = "disable-log-files-tabs"))]
 pub fn tab_stashing(key_config: &SharedKeyConfig) -> String {
 	format!(
 		"Stashing [{}]",
 		key_config.get_hint(key_config.keys.tab_stashing)
 	)
 }
+
+#[cfg(feature = "disable-log-files-tabs")]
+pub fn tab_stashing(_key_config: &SharedKeyConfig) -> String {
+	"Stashing".to_string()
+}
+
+#[cfg(not(feature = "disable-log-files-tabs"))]
 pub fn tab_stashes(key_config: &SharedKeyConfig) -> String {
 	format!(
 		"Stashes [{}]",
 		key_config.get_hint(key_config.keys.tab_stashes)
 	)
+}
+
+#[cfg(feature = "disable-log-files-tabs")]
+pub fn tab_stashes(_key_config: &SharedKeyConfig) -> String {
+	"Stashes".to_string()
 }
 pub fn tab_divider(_key_config: &SharedKeyConfig) -> String {
 	" | ".to_string()
@@ -527,6 +546,7 @@ pub mod commands {
 			CMD_GROUP_GENERAL,
 		)
 	}
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	pub fn toggle_tabs_direct(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {
@@ -538,6 +558,21 @@ pub mod commands {
 				key_config.get_hint(key_config.keys.tab_files),
 				key_config.get_hint(key_config.keys.tab_stashing),
 				key_config.get_hint(key_config.keys.tab_stashes),
+			),
+			"switch top level tabs directly",
+			CMD_GROUP_GENERAL,
+		)
+	}
+	#[cfg(feature = "disable-log-files-tabs")]
+	pub fn toggle_tabs_direct(
+		key_config: &SharedKeyConfig,
+	) -> CommandText {
+		CommandText::new(
+			format!(
+				"Tab [{}{}{}]",
+				key_config.get_hint(key_config.keys.tab_status),
+				key_config.get_hint(key_config.keys.tab_log),
+				key_config.get_hint(key_config.keys.tab_files),
 			),
 			"switch top level tabs directly",
 			CMD_GROUP_GENERAL,

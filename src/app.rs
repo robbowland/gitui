@@ -746,9 +746,13 @@ impl App {
 	fn switch_tab(&mut self, k: &KeyEvent) -> Result<()> {
 		if key_match(k, self.key_config.keys.tab_status) {
 			self.switch_to_tab(&AppTabs::Status)?;
-		} else if key_match(k, self.key_config.keys.tab_stashing) {
+		} else if key_match(k, self.key_config.keys.tab_stashing)
+			|| key_match(k, self.key_config.keys.tab_log)
+		{
 			self.switch_to_tab(&AppTabs::Stashing)?;
-		} else if key_match(k, self.key_config.keys.tab_stashes) {
+		} else if key_match(k, self.key_config.keys.tab_stashes)
+			|| key_match(k, self.key_config.keys.tab_files)
+		{
 			self.switch_to_tab(&AppTabs::Stashlist)?;
 		}
 
