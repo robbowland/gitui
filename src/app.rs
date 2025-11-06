@@ -1,3 +1,7 @@
+#[cfg(not(feature = "disable-log-files-tabs"))]
+use crate::popups::LogSearchPopupPopup;
+#[cfg(not(feature = "disable-log-files-tabs"))]
+use crate::tabs::{FilesTab, Revlog};
 use crate::{
 	accessors,
 	cmdbar::CommandBar,
@@ -14,12 +18,11 @@ use crate::{
 		CompareCommitsPopup, ConfirmPopup, CreateBranchPopup,
 		CreateRemotePopup, ExternalEditorPopup, FetchPopup,
 		FileRevlogPopup, FuzzyFindPopup, HelpPopup,
-		InspectCommitPopup, LogSearchPopupPopup, MsgPopup,
-		OptionsPopup, PullPopup, PushPopup, PushTagsPopup,
-		RemoteListPopup, RenameBranchPopup, RenameRemotePopup,
-		ResetPopup, RevisionFilesPopup, StashMsgPopup,
-		SubmodulesListPopup, TagCommitPopup, TagListPopup,
-		UpdateRemoteUrlPopup,
+		InspectCommitPopup, MsgPopup, OptionsPopup, PullPopup,
+		PushPopup, PushTagsPopup, RemoteListPopup, RenameBranchPopup,
+		RenameRemotePopup, ResetPopup, RevisionFilesPopup,
+		StashMsgPopup, SubmodulesListPopup, TagCommitPopup,
+		TagListPopup, UpdateRemoteUrlPopup,
 	},
 	queue::{
 		Action, AppTabs, InternalEvent, NeedsUpdate, Queue,
@@ -27,7 +30,7 @@ use crate::{
 	},
 	setup_popups,
 	strings::{self, ellipsis_trim_start, order},
-	tabs::{FilesTab, Revlog, StashList, Stashing, Status},
+	tabs::{StashList, Stashing, Status},
 	try_or_popup,
 	ui::style::{SharedTheme, Theme},
 	AsyncAppNotification, AsyncNotification,
@@ -81,6 +84,7 @@ pub struct App {
 	external_editor_popup: ExternalEditorPopup,
 	revision_files_popup: RevisionFilesPopup,
 	fuzzy_find_popup: FuzzyFindPopup,
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	log_search_popup: LogSearchPopupPopup,
 	push_popup: PushPopup,
 	push_tags_popup: PushTagsPopup,
@@ -100,10 +104,12 @@ pub struct App {
 	reset_popup: ResetPopup,
 	cmdbar: RefCell<CommandBar>,
 	tab: usize,
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	revlog: Revlog,
 	status_tab: Status,
 	stashing_tab: Stashing,
 	stashlist_tab: StashList,
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	files_tab: FilesTab,
 	queue: Queue,
 	theme: SharedTheme,
@@ -204,6 +210,7 @@ impl App {
 			tags_popup: TagListPopup::new(&env),
 			options_popup: OptionsPopup::new(&env),
 			submodule_popup: SubmodulesListPopup::new(&env),
+			#[cfg(not(feature = "disable-log-files-tabs"))]
 			log_search_popup: LogSearchPopupPopup::new(&env),
 			fuzzy_find_popup: FuzzyFindPopup::new(&env),
 			do_quit: QuitState::None,
@@ -213,10 +220,12 @@ impl App {
 			)),
 			help_popup: HelpPopup::new(&env),
 			msg_popup: MsgPopup::new(&env),
+			#[cfg(not(feature = "disable-log-files-tabs"))]
 			revlog: Revlog::new(&env),
 			status_tab: Status::new(&env),
 			stashing_tab: Stashing::new(&env),
 			stashlist_tab: StashList::new(&env),
+			#[cfg(not(feature = "disable-log-files-tabs"))]
 			files_tab: FilesTab::new(&env),
 			tab: 0,
 			queue: env.queue,
@@ -230,7 +239,9 @@ impl App {
 			popup_stack: PopupStack::default(),
 		};
 
-		app.set_tab(tab)?;
+		let tab_count = Self::tab_count();
+		let initial_tab = if tab >= tab_count { 0 } else { tab };
+		app.set_tab(initial_tab)?;
 
 		Ok(app)
 	}
@@ -268,13 +279,29 @@ impl App {
 
 		if !fullscreen_popup_open {
 			//TODO: macro because of generic draw call
-			match self.tab {
-				0 => self.status_tab.draw(f, chunks_main[1])?,
-				1 => self.revlog.draw(f, chunks_main[1])?,
-				2 => self.files_tab.draw(f, chunks_main[1])?,
-				3 => self.stashing_tab.draw(f, chunks_main[1])?,
-				4 => self.stashlist_tab.draw(f, chunks_main[1])?,
-				_ => bail!("unknown tab"),
+			#[cfg(not(feature = "disable-log-files-tabs"))]
+			{
+				match self.tab {
+					0 => self.status_tab.draw(f, chunks_main[1])?,
+					1 => self.revlog.draw(f, chunks_main[1])?,
+					2 => self.files_tab.draw(f, chunks_main[1])?,
+					3 => self.stashing_tab.draw(f, chunks_main[1])?,
+					4 => {
+						self.stashlist_tab.draw(f, chunks_main[1])?
+					}
+					_ => bail!("unknown tab"),
+				}
+			}
+			#[cfg(feature = "disable-log-files-tabs")]
+			{
+				match self.tab {
+					0 => self.status_tab.draw(f, chunks_main[1])?,
+					1 => self.stashing_tab.draw(f, chunks_main[1])?,
+					2 => {
+						self.stashlist_tab.draw(f, chunks_main[1])?
+					}
+					_ => bail!("unknown tab"),
+				}
 			}
 		}
 
@@ -386,8 +413,11 @@ impl App {
 
 		self.commit_popup.update();
 		self.status_tab.update()?;
-		self.revlog.update()?;
-		self.files_tab.update()?;
+		#[cfg(not(feature = "disable-log-files-tabs"))]
+		{
+			self.revlog.update()?;
+			self.files_tab.update()?;
+		}
 		self.stashing_tab.update()?;
 		self.stashlist_tab.update()?;
 		self.reset_popup.update()?;
@@ -407,7 +437,10 @@ impl App {
 		if let AsyncNotification::Git(ev) = ev {
 			self.status_tab.update_git(ev)?;
 			self.stashing_tab.update_git(ev)?;
-			self.revlog.update_git(ev)?;
+			#[cfg(not(feature = "disable-log-files-tabs"))]
+			{
+				self.revlog.update_git(ev)?;
+			}
 			self.file_revlog_popup.update_git(ev)?;
 			self.inspect_commit_popup.update_git(ev)?;
 			self.compare_commits_popup.update_git(ev)?;
@@ -418,6 +451,7 @@ impl App {
 			self.select_branch_popup.update_git(ev)?;
 		}
 
+		#[cfg(not(feature = "disable-log-files-tabs"))]
 		self.files_tab.update_async(ev)?;
 		self.blame_file_popup.update_async(ev)?;
 		self.revision_files_popup.update(ev)?;
@@ -443,10 +477,8 @@ impl App {
 
 	///
 	pub fn any_work_pending(&self) -> bool {
-		self.status_tab.anything_pending()
-			|| self.revlog.any_work_pending()
+		let base_pending = self.status_tab.anything_pending()
 			|| self.stashing_tab.anything_pending()
-			|| self.files_tab.anything_pending()
 			|| self.blame_file_popup.any_work_pending()
 			|| self.file_revlog_popup.any_work_pending()
 			|| self.inspect_commit_popup.any_work_pending()
@@ -457,7 +489,17 @@ impl App {
 			|| self.pull_popup.any_work_pending()
 			|| self.fetch_popup.any_work_pending()
 			|| self.revision_files_popup.any_work_pending()
-			|| self.tags_popup.any_work_pending()
+			|| self.tags_popup.any_work_pending();
+
+		#[cfg(not(feature = "disable-log-files-tabs"))]
+		let pending = base_pending
+			|| self.revlog.any_work_pending()
+			|| self.files_tab.anything_pending();
+
+		#[cfg(feature = "disable-log-files-tabs")]
+		let pending = base_pending;
+
+		pending
 	}
 
 	///
@@ -473,6 +515,7 @@ impl App {
 
 // private impls
 impl App {
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	accessors!(
 		self,
 		[
@@ -513,6 +556,45 @@ impl App {
 		]
 	);
 
+	#[cfg(feature = "disable-log-files-tabs")]
+	accessors!(
+		self,
+		[
+			fuzzy_find_popup,
+			msg_popup,
+			confirm_popup,
+			commit_popup,
+			blame_file_popup,
+			file_revlog_popup,
+			stashmsg_popup,
+			inspect_commit_popup,
+			compare_commits_popup,
+			external_editor_popup,
+			push_popup,
+			push_tags_popup,
+			pull_popup,
+			fetch_popup,
+			tag_commit_popup,
+			reset_popup,
+			create_branch_popup,
+			create_remote_popup,
+			rename_remote_popup,
+			update_remote_url_popup,
+			remotes_popup,
+			rename_branch_popup,
+			select_branch_popup,
+			revision_files_popup,
+			submodule_popup,
+			tags_popup,
+			options_popup,
+			help_popup,
+			status_tab,
+			stashing_tab,
+			stashlist_tab
+		]
+	);
+
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	setup_popups!(
 		self,
 		[
@@ -548,6 +630,41 @@ impl App {
 		]
 	);
 
+	#[cfg(feature = "disable-log-files-tabs")]
+	setup_popups!(
+		self,
+		[
+			commit_popup,
+			stashmsg_popup,
+			help_popup,
+			inspect_commit_popup,
+			compare_commits_popup,
+			blame_file_popup,
+			file_revlog_popup,
+			external_editor_popup,
+			tag_commit_popup,
+			select_branch_popup,
+			remotes_popup,
+			create_remote_popup,
+			rename_remote_popup,
+			update_remote_url_popup,
+			submodule_popup,
+			tags_popup,
+			reset_popup,
+			create_branch_popup,
+			rename_branch_popup,
+			revision_files_popup,
+			fuzzy_find_popup,
+			push_popup,
+			push_tags_popup,
+			pull_popup,
+			fetch_popup,
+			options_popup,
+			confirm_popup,
+			msg_popup
+		]
+	);
+
 	fn check_quit(&mut self, ev: &Event) -> bool {
 		if self.any_popup_visible() {
 			return false;
@@ -572,13 +689,29 @@ impl App {
 	}
 
 	fn get_tabs(&mut self) -> Vec<&mut dyn Component> {
-		vec![
-			&mut self.status_tab,
-			&mut self.revlog,
-			&mut self.files_tab,
-			&mut self.stashing_tab,
-			&mut self.stashlist_tab,
-		]
+		let mut tabs: Vec<&mut dyn Component> =
+			vec![&mut self.status_tab];
+
+		#[cfg(not(feature = "disable-log-files-tabs"))]
+		{
+			tabs.push(&mut self.revlog);
+			tabs.push(&mut self.files_tab);
+		}
+
+		tabs.push(&mut self.stashing_tab);
+		tabs.push(&mut self.stashlist_tab);
+
+		tabs
+	}
+
+	#[cfg(not(feature = "disable-log-files-tabs"))]
+	const fn tab_count() -> usize {
+		5
+	}
+
+	#[cfg(feature = "disable-log-files-tabs")]
+	const fn tab_count() -> usize {
+		3
 	}
 
 	fn toggle_tabs(&mut self, reverse: bool) -> Result<()> {
@@ -592,6 +725,7 @@ impl App {
 		self.set_tab(new_tab)
 	}
 
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	fn switch_tab(&mut self, k: &KeyEvent) -> Result<()> {
 		if key_match(k, self.key_config.keys.tab_status) {
 			self.switch_to_tab(&AppTabs::Status)?;
@@ -599,6 +733,19 @@ impl App {
 			self.switch_to_tab(&AppTabs::Log)?;
 		} else if key_match(k, self.key_config.keys.tab_files) {
 			self.switch_to_tab(&AppTabs::Files)?;
+		} else if key_match(k, self.key_config.keys.tab_stashing) {
+			self.switch_to_tab(&AppTabs::Stashing)?;
+		} else if key_match(k, self.key_config.keys.tab_stashes) {
+			self.switch_to_tab(&AppTabs::Stashlist)?;
+		}
+
+		Ok(())
+	}
+
+	#[cfg(feature = "disable-log-files-tabs")]
+	fn switch_tab(&mut self, k: &KeyEvent) -> Result<()> {
+		if key_match(k, self.key_config.keys.tab_status) {
+			self.switch_to_tab(&AppTabs::Status)?;
 		} else if key_match(k, self.key_config.keys.tab_stashing) {
 			self.switch_to_tab(&AppTabs::Stashing)?;
 		} else if key_match(k, self.key_config.keys.tab_stashes) {
@@ -624,6 +771,7 @@ impl App {
 		Ok(())
 	}
 
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	fn switch_to_tab(&mut self, tab: &AppTabs) -> Result<()> {
 		match tab {
 			AppTabs::Status => self.set_tab(0)?,
@@ -631,6 +779,16 @@ impl App {
 			AppTabs::Files => self.set_tab(2)?,
 			AppTabs::Stashing => self.set_tab(3)?,
 			AppTabs::Stashlist => self.set_tab(4)?,
+		}
+		Ok(())
+	}
+
+	#[cfg(feature = "disable-log-files-tabs")]
+	fn switch_to_tab(&mut self, tab: &AppTabs) -> Result<()> {
+		match tab {
+			AppTabs::Status => self.set_tab(0)?,
+			AppTabs::Stashing => self.set_tab(1)?,
+			AppTabs::Stashlist => self.set_tab(2)?,
 		}
 		Ok(())
 	}
@@ -782,6 +940,7 @@ impl App {
 				self.switch_to_tab(&tab)?;
 				flags.insert(NeedsUpdate::ALL);
 			}
+			#[cfg(not(feature = "disable-log-files-tabs"))]
 			InternalEvent::SelectCommitInRevlog(id) => {
 				if let Err(error) = self.revlog.select_commit(id) {
 					self.queue.push(InternalEvent::ShowErrorMsg(
@@ -792,6 +951,8 @@ impl App {
 					flags.insert(NeedsUpdate::ALL);
 				}
 			}
+			#[cfg(feature = "disable-log-files-tabs")]
+			InternalEvent::SelectCommitInRevlog(_) => {}
 			InternalEvent::OpenExternalEditor(path) => {
 				self.input.set_polling(false);
 				self.external_editor_popup.show()?;
@@ -831,11 +992,14 @@ impl App {
 				flags
 					.insert(NeedsUpdate::ALL | NeedsUpdate::COMMANDS);
 			}
+			#[cfg(not(feature = "disable-log-files-tabs"))]
 			InternalEvent::OpenLogSearchPopup => {
 				self.log_search_popup.open()?;
 				flags
 					.insert(NeedsUpdate::ALL | NeedsUpdate::COMMANDS);
 			}
+			#[cfg(feature = "disable-log-files-tabs")]
+			InternalEvent::OpenLogSearchPopup => {}
 			InternalEvent::OptionSwitched(o) => {
 				match o {
 					AppOption::StatusShowUntracked => {
@@ -860,9 +1024,14 @@ impl App {
 						.select_branch_popup
 						.branch_finder_update(idx)?,
 					FuzzyFinderTarget::Files => {
-						self.files_tab.file_finder_update(
-							&PathBuf::from(content.clone()),
-						);
+						#[cfg(not(
+							feature = "disable-log-files-tabs"
+						))]
+						{
+							self.files_tab.file_finder_update(
+								&PathBuf::from(content.clone()),
+							);
+						}
 						self.revision_files_popup.file_finder_update(
 							&PathBuf::from(content),
 						);
@@ -902,9 +1071,12 @@ impl App {
 			InternalEvent::OpenResetPopup(id) => {
 				self.reset_popup.open(id)?;
 			}
+			#[cfg(not(feature = "disable-log-files-tabs"))]
 			InternalEvent::CommitSearch(options) => {
 				self.revlog.search(options);
 			}
+			#[cfg(feature = "disable-log-files-tabs")]
+			InternalEvent::CommitSearch(_) => {}
 		}
 
 		Ok(flags)
@@ -1074,11 +1246,21 @@ impl App {
 
 		command_pump(&mut res, force_all, &self.components());
 
+		let files_tab_visible = {
+			#[cfg(not(feature = "disable-log-files-tabs"))]
+			{
+				self.files_tab.is_visible()
+			}
+			#[cfg(feature = "disable-log-files-tabs")]
+			{
+				false
+			}
+		};
+
 		res.push(CommandInfo::new(
 			strings::commands::find_file(&self.key_config),
 			!self.fuzzy_find_popup.is_visible(),
-			(!self.any_popup_visible()
-				&& self.files_tab.is_visible())
+			(!self.any_popup_visible() && files_tab_visible)
 				|| self.revision_files_popup.is_visible()
 				|| force_all,
 		));
@@ -1133,13 +1315,20 @@ impl App {
 			horizontal: 1,
 		});
 
-		let tab_labels = [
-			Span::raw(strings::tab_status(&self.key_config)),
-			Span::raw(strings::tab_log(&self.key_config)),
-			Span::raw(strings::tab_files(&self.key_config)),
-			Span::raw(strings::tab_stashing(&self.key_config)),
-			Span::raw(strings::tab_stashes(&self.key_config)),
-		];
+		let mut tab_labels =
+			vec![Span::raw(strings::tab_status(&self.key_config))];
+		#[cfg(not(feature = "disable-log-files-tabs"))]
+		{
+			tab_labels
+				.push(Span::raw(strings::tab_log(&self.key_config)));
+			tab_labels.push(Span::raw(strings::tab_files(
+				&self.key_config,
+			)));
+		}
+		tab_labels
+			.push(Span::raw(strings::tab_stashing(&self.key_config)));
+		tab_labels
+			.push(Span::raw(strings::tab_stashes(&self.key_config)));
 		let divider = strings::tab_divider(&self.key_config);
 
 		// heuristic, since tui doesn't provide a way to know

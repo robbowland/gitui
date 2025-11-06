@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "disable-log-files-tabs", allow(dead_code))]
+
 use std::borrow::Cow;
 
 use asyncgit::sync::CommitId;
@@ -1524,6 +1526,7 @@ pub mod commands {
 			CMD_GROUP_LOG,
 		)
 	}
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	pub fn log_find_commit(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {
@@ -1536,6 +1539,7 @@ pub mod commands {
 			CMD_GROUP_LOG,
 		)
 	}
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	pub fn log_close_search(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {
@@ -1714,6 +1718,7 @@ pub mod commands {
 		)
 	}
 
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	pub fn compare_commits(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {
@@ -1766,6 +1771,7 @@ pub mod commands {
 		)
 	}
 
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	pub fn open_tags_popup(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {

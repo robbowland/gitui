@@ -273,7 +273,7 @@ pub trait Component {
 		Ok(())
 	}
 
-	///
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	fn toggle_visible(&mut self) -> Result<()> {
 		if self.is_visible() {
 			self.hide();

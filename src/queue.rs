@@ -75,7 +75,9 @@ pub enum StackablePopupOpen {
 
 pub enum AppTabs {
 	Status,
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	Log,
+	#[cfg(not(feature = "disable-log-files-tabs"))]
 	Files,
 	Stashing,
 	Stashlist,
@@ -103,7 +105,7 @@ pub enum InternalEvent {
 	TabSwitchStatus,
 	///
 	TabSwitch(AppTabs),
-	///
+	#[cfg_attr(feature = "disable-log-files-tabs", allow(dead_code))]
 	SelectCommitInRevlog(CommitId),
 	///
 	TagCommit(CommitId),
@@ -131,7 +133,7 @@ pub enum InternalEvent {
 	OptionSwitched(AppOption),
 	///
 	OpenFuzzyFinder(Vec<String>, FuzzyFinderTarget),
-	///
+	#[cfg_attr(feature = "disable-log-files-tabs", allow(dead_code))]
 	OpenLogSearchPopup,
 	///
 	FuzzyFinderChanged(usize, String, FuzzyFinderTarget),
@@ -155,7 +157,7 @@ pub enum InternalEvent {
 	OpenResetPopup(CommitId),
 	///
 	RewordCommit(CommitId),
-	///
+	#[cfg_attr(feature = "disable-log-files-tabs", allow(dead_code))]
 	CommitSearch(LogFilterSearchOptions),
 }
 

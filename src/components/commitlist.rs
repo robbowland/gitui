@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "disable-log-files-tabs", allow(dead_code))]
+
 use super::utils::logitems::{ItemBatch, LogEntry};
 use crate::{
 	app::Environment,

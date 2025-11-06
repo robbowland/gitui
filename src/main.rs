@@ -55,6 +55,10 @@
 	clippy::empty_docs,
 	clippy::unnecessary_debug_formatting
 )]
+#![cfg_attr(
+	feature = "disable-log-files-tabs",
+	allow(dead_code, unused_imports)
+)]
 
 //TODO:
 // #![deny(clippy::expect_used)]

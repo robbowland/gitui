@@ -11,6 +11,7 @@ mod file_revlog;
 mod fuzzy_find;
 mod help;
 mod inspect_commit;
+#[cfg(not(feature = "disable-log-files-tabs"))]
 mod log_search;
 mod msg;
 mod options;
@@ -41,6 +42,7 @@ pub use file_revlog::{FileRevOpen, FileRevlogPopup};
 pub use fuzzy_find::FuzzyFindPopup;
 pub use help::HelpPopup;
 pub use inspect_commit::{InspectCommitOpen, InspectCommitPopup};
+#[cfg(not(feature = "disable-log-files-tabs"))]
 pub use log_search::LogSearchPopupPopup;
 pub use msg::MsgPopup;
 pub use options::{AppOption, OptionsPopup};

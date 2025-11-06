@@ -32,6 +32,7 @@ regex-onig = ["syntect/regex-onig", "two-face/syntect-onig"]
 timing = ["scopetime/enabled"]
 trace-libgit = ["asyncgit/trace-libgit"]
 vendor-openssl = ["asyncgit/vendor-openssl"]
+disable-log-files-tabs = []
 
 [dependencies]
 anyhow = "1.0"
