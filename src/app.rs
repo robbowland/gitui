@@ -252,11 +252,18 @@ impl App {
 
 		self.cmdbar.borrow_mut().refresh_width(fsize.width);
 
+		let top_bar_height: u16 =
+			if cfg!(feature = "disable-log-files-tabs") {
+				1
+			} else {
+				2
+			};
+
 		let chunks_main = Layout::default()
 			.direction(Direction::Vertical)
 			.constraints(
 				[
-					Constraint::Length(2),
+					Constraint::Length(top_bar_height),
 					Constraint::Min(2),
 					Constraint::Length(self.cmdbar.borrow().height()),
 				]
@@ -1359,19 +1366,26 @@ impl App {
 		let tabs: Vec<Line> =
 			tab_labels.into_iter().map(Line::from).collect();
 
-		f.render_widget(
-			Tabs::new(tabs)
-				.block(
-					Block::default()
-						.borders(Borders::BOTTOM)
-						.border_style(self.theme.block(false)),
-				)
-				.style(self.theme.tab(false))
-				.highlight_style(self.theme.tab(true))
-				.divider(divider)
-				.select(self.tab),
-			table_area,
-		);
+		#[cfg_attr(
+			feature = "disable-log-files-tabs",
+			allow(unused_mut)
+		)]
+		let mut tabs_widget = Tabs::new(tabs)
+			.style(self.theme.tab(false))
+			.highlight_style(self.theme.tab(true))
+			.divider(divider)
+			.select(self.tab);
+
+		#[cfg(not(feature = "disable-log-files-tabs"))]
+		{
+			tabs_widget = tabs_widget.block(
+				Block::default()
+					.borders(Borders::BOTTOM)
+					.border_style(self.theme.block(false)),
+			);
+		}
+
+		f.render_widget(tabs_widget, table_area);
 
 		f.render_widget(
 			Paragraph::new(Line::from(vec![Span::styled(
