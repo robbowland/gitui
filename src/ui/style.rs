@@ -53,9 +53,7 @@ impl Theme {
 
 	pub fn title(&self, focused: bool) -> Style {
 		if focused {
-			Style::default()
-				.fg(self.block_title_focused)
-				.add_modifier(Modifier::BOLD)
+			Style::default().fg(self.block_title_focused)
 		} else {
 			Style::default().fg(self.disabled_fg)
 		}
@@ -78,7 +76,10 @@ impl Theme {
 
 	pub fn tab(&self, selected: bool) -> Style {
 		if selected {
-			let base = self.text(true, false).fg(self.selected_tab);
+			let base = self
+				.text(true, false)
+				.fg(self.selected_tab)
+				.add_modifier(Modifier::BOLD);
 			#[cfg(feature = "disable-log-files-tabs")]
 			{
 				return base;

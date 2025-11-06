@@ -347,7 +347,7 @@ pub fn tag_popup_annotation_msg() -> String {
 	"type tag annotation".to_string()
 }
 pub fn stashlist_title(_key_config: &SharedKeyConfig) -> String {
-	"Stashes".to_string()
+	" Stashes ".to_string()
 }
 pub fn help_title(_key_config: &SharedKeyConfig) -> String {
 	"Help: all commands".to_string()

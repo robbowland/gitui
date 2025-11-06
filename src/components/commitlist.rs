@@ -789,9 +789,10 @@ impl DrawableComponent for CommitList {
 			selection,
 		));
 
+		let title_label = self.title.trim_end();
 		let title = format!(
-			"{} {}/{}",
-			self.title,
+			"{} {}/{} ",
+			title_label,
 			self.commits.len().saturating_sub(self.selection),
 			self.commits.len(),
 		);
