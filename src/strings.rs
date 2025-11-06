@@ -58,13 +58,13 @@ pub fn title_tags() -> String {
 	"Tags".to_string()
 }
 pub fn title_status(_key_config: &SharedKeyConfig) -> String {
-	"Unstaged Changes".to_string()
+	" Unstaged Changes ".to_string()
 }
 pub fn title_diff(_key_config: &SharedKeyConfig) -> String {
-	"Diff: ".to_string()
+	" Diff: ".to_string()
 }
 pub fn title_index(_key_config: &SharedKeyConfig) -> String {
-	"Staged Changes".to_string()
+	" Staged Changes ".to_string()
 }
 #[cfg(not(feature = "disable-log-files-tabs"))]
 pub fn tab_status(key_config: &SharedKeyConfig) -> String {
@@ -353,12 +353,12 @@ pub fn help_title(_key_config: &SharedKeyConfig) -> String {
 	"Help: all commands".to_string()
 }
 pub fn stashing_files_title(_key_config: &SharedKeyConfig) -> String {
-	"Files to Stash".to_string()
+	" Files to Stash ".to_string()
 }
 pub fn stashing_options_title(
 	_key_config: &SharedKeyConfig,
 ) -> String {
-	"Options".to_string()
+	" Options ".to_string()
 }
 pub fn loading_text(_key_config: &SharedKeyConfig) -> String {
 	"Loading ...".to_string()
