@@ -78,12 +78,18 @@ impl Theme {
 
 	pub fn tab(&self, selected: bool) -> Style {
 		if selected {
-			self.text(true, false)
-				.fg(self.selected_tab)
-				.add_modifier(Modifier::UNDERLINED)
-		} else {
-			self.text(false, false)
+			let base = self.text(true, false).fg(self.selected_tab);
+			#[cfg(feature = "disable-log-files-tabs")]
+			{
+				return base;
+			}
+			#[cfg(not(feature = "disable-log-files-tabs"))]
+			{
+				return base.add_modifier(Modifier::UNDERLINED);
+			}
 		}
+
+		self.text(false, false)
 	}
 
 	pub fn tags(&self, selected: bool) -> Style {
