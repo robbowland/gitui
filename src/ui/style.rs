@@ -17,6 +17,7 @@ pub struct Theme {
 	selection_bg: Color,
 	selection_fg: Color,
 	use_selection_fg: bool,
+	selection_bold: bool,
 	cmdbar_bg: Color,
 	disabled_fg: Color,
 	diff_line_add: Color,
@@ -67,11 +68,13 @@ impl Theme {
 		}
 		.fg(self.branch_fg);
 
-		if selected {
+		let styled = if selected {
 			branch.patch(Style::default().bg(self.selection_bg))
 		} else {
 			branch
-		}
+		};
+
+		self.apply_selection_modifiers(styled, selected)
 	}
 
 	pub fn tab(&self, selected: bool) -> Style {
@@ -94,25 +97,29 @@ impl Theme {
 	}
 
 	pub fn tags(&self, selected: bool) -> Style {
-		Style::default()
+		let style = Style::default()
 			.fg(self.tag_fg)
 			.add_modifier(Modifier::BOLD)
 			.bg(if selected {
 				self.selection_bg
 			} else {
 				Color::Reset
-			})
+			});
+
+		self.apply_selection_modifiers(style, selected)
 	}
 
 	pub fn text(&self, enabled: bool, selected: bool) -> Style {
-		match (enabled, selected) {
+		let style = match (enabled, selected) {
 			(false, false) => Style::default().fg(self.disabled_fg),
 			(false, true) => Style::default().bg(self.selection_bg),
 			(true, false) => Style::default(),
 			(true, true) => Style::default()
 				.fg(self.command_fg)
 				.bg(self.selection_bg),
-		}
+		};
+
+		self.apply_selection_modifiers(style, selected)
 	}
 
 	pub fn item(&self, typ: StatusItemType, selected: bool) -> Style {
@@ -152,17 +159,46 @@ impl Theme {
 		self.apply_select(style, selected)
 	}
 
-	const fn apply_select(
+	fn apply_select(
 		&self,
 		style: Style,
 		selected: bool,
 	) -> Style {
-		if selected {
+		let style = if selected {
 			if self.use_selection_fg {
 				style.bg(self.selection_bg).fg(self.selection_fg)
 			} else {
 				style.bg(self.selection_bg)
 			}
+		} else {
+			style
+		};
+
+		self.apply_selection_modifiers(style, selected)
+	}
+
+	fn apply_selection_modifiers(
+		&self,
+		style: Style,
+		selected: bool,
+	) -> Style {
+		if selected && self.selection_bold {
+			style.add_modifier(Modifier::BOLD)
+		} else {
+			style
+		}
+	}
+
+	pub fn apply_fg_override(
+		&self,
+		style: Style,
+		color: Option<Color>,
+		selected: bool,
+	) -> Style {
+		if selected && self.use_selection_fg {
+			style
+		} else if let Some(color) = color {
+			style.fg(color)
 		} else {
 			style
 		}
@@ -177,11 +213,13 @@ impl Theme {
 	}
 
 	pub fn diff_hunk_marker(&self, selected: bool) -> Style {
-		if selected {
+		let style = if selected {
 			Style::default().bg(self.selection_bg)
 		} else {
 			Style::default().fg(self.disabled_fg)
-		}
+		};
+
+		self.apply_selection_modifiers(style, selected)
 	}
 
 	pub fn diff_line(
@@ -342,6 +380,7 @@ impl Default for Theme {
 			selection_bg: Color::Blue,
 			selection_fg: Color::White,
 			use_selection_fg: true,
+			selection_bold: false,
 			cmdbar_bg: Color::Blue,
 			disabled_fg: Color::DarkGray,
 			diff_line_add: Color::Green,
@@ -389,6 +428,7 @@ mod tests {
 	selection_bg: Some("Black"),
 	selection_fg: Some("#ffffff"),
 	use_selection_fg: Some(false),
+	selection_bold: Some(true),
 	syntax: Some("InspiredGitHub")
 )
 "##
@@ -403,6 +443,52 @@ mod tests {
 		assert_ne!(theme.syntax, Theme::default().syntax);
 		assert_eq!(theme.selection_bg, Color::Black);
 		assert_eq!(theme.selection_fg, Color::Rgb(255, 255, 255));
+		assert!(theme.selection_bold);
 		assert_eq!(theme.syntax, "InspiredGitHub");
+	}
+
+	#[test]
+	fn selection_fg_blocks_icon_override_when_enabled() {
+		let theme = Theme::default();
+		let base = theme.file_tree_item(false, true);
+		let icon_style =
+			theme.apply_fg_override(base, Some(Color::Red), true);
+
+		assert_eq!(icon_style, base);
+	}
+
+	#[test]
+	fn icon_color_applies_when_selection_fg_disabled() {
+		let mut theme = Theme::default();
+		theme.use_selection_fg = false;
+		let base = theme.file_tree_item(false, true);
+		let icon_style =
+			theme.apply_fg_override(base, Some(Color::Red), true);
+
+		assert_eq!(icon_style, base.fg(Color::Red));
+	}
+
+	#[test]
+	fn selection_bold_applies_to_selected_text() {
+		let mut theme = Theme::default();
+		theme.selection_bold = true;
+
+		let style = theme.text(true, true);
+		let expected = Style::default()
+			.fg(theme.command_fg)
+			.bg(theme.selection_bg)
+			.add_modifier(Modifier::BOLD);
+
+		assert_eq!(style, expected);
+	}
+
+	#[test]
+	fn selection_bold_does_not_affect_unselected_text() {
+		let mut theme = Theme::default();
+		theme.selection_bold = true;
+
+		let style = theme.text(true, false);
+
+		assert_eq!(style, Style::default());
 	}
 }

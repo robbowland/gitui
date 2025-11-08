@@ -22,6 +22,7 @@ Example theme override:
 (
     selection_bg: Some("Blue"),
     selection_fg: Some("#ffffff"),
+    selection_bold: Some(true),
 )
 ```
 
@@ -84,7 +85,9 @@ This can be changed by specifying the `use_selection_fg` boolean in your `theme.
 ```
 (
     use_selection_fg: Some(false),
+    selection_bold: Some(true),
 )
 ```
 
+Set `selection_bold` to `Some(true)` to draw selected rows using the bold modifier (default is `false`).
 By default, `use_selection_fg` is set to `true`.

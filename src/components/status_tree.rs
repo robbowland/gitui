@@ -193,9 +193,11 @@ impl StatusTreeComponent {
 				let suffix = format!(" {file_part}");
 				let base_style =
 					theme.item(status_item.status, selected);
-				let icon_style = icon
-					.color
-					.map_or(base_style, |color| base_style.fg(color));
+				let icon_style = theme.apply_fg_override(
+					base_style,
+					icon.color,
+					selected,
+				);
 
 				Some(Line::from(vec![
 					Span::styled(Cow::from(prefix), base_style),
@@ -214,11 +216,16 @@ impl StatusTreeComponent {
 					string.to_string()
 				};
 				let suffix = format!(" {name}");
-				let text_style =
-					theme.text(true, selected).fg(Color::Blue);
-				let icon_style = folder_icon
-					.color
-					.map_or(text_style, |color| text_style.fg(color));
+				let text_style = theme.apply_fg_override(
+					theme.text(true, selected),
+					Some(Color::Blue),
+					selected,
+				);
+				let icon_style = theme.apply_fg_override(
+					text_style,
+					folder_icon.color,
+					selected,
+				);
 
 				Some(Line::from(vec![
 					Span::styled(Cow::from(prefix), text_style),

@@ -182,9 +182,11 @@ impl RevisionFilesComponent {
 		let prefix = format!("{indent_str}");
 		let suffix = format!(" {name_part}");
 		let base_style = theme.file_tree_item(is_path, selected);
-		let icon_style = icon
-			.color
-			.map_or(base_style, |color| base_style.fg(color));
+		let icon_style = theme.apply_fg_override(
+			base_style,
+			icon.color,
+			selected,
+		);
 
 		Line::from(vec![
 			Span::styled(Cow::from(prefix), base_style),
