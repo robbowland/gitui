@@ -69,6 +69,7 @@ mod bug_report;
 mod clipboard;
 mod cmdbar;
 mod components;
+mod icons;
 mod input;
 mod keys;
 mod notify_mutex;

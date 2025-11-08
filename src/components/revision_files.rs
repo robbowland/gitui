@@ -5,10 +5,11 @@ use super::{
 };
 use crate::{
 	app::Environment,
+	icons,
 	keys::{key_match, SharedKeyConfig},
 	popups::{BlameFileOpen, FileRevOpen},
 	queue::{InternalEvent, Queue, StackablePopupOpen},
-	strings::{self, order, symbol},
+	strings::{self, order},
 	try_or_popup,
 	ui::{self, common_nav, style::SharedTheme},
 	AsyncNotification,
@@ -25,7 +26,7 @@ use crossterm::event::Event;
 use filetreelist::{FileTree, FileTreeItem};
 use ratatui::{
 	layout::{Constraint, Direction, Layout, Rect},
-	text::Span,
+	text::{Line, Span},
 	widgets::{Block, Borders},
 	Frame,
 };
@@ -150,12 +151,12 @@ impl RevisionFilesComponent {
 			|| self.async_treefiles.is_pending()
 	}
 
-	fn tree_item_to_span<'a>(
+	fn tree_item_to_line<'a>(
 		item: &'a FileTreeItem,
 		theme: &SharedTheme,
 		width: usize,
 		selected: bool,
-	) -> Span<'a> {
+	) -> Line<'a> {
 		let path = item.info().path_str();
 		let indent = item.info().indent();
 
@@ -166,24 +167,30 @@ impl RevisionFilesComponent {
 		};
 
 		let is_path = item.kind().is_path();
-		let path_arrow = if is_path {
-			if item.kind().is_path_collapsed() {
-				symbol::FOLDER_ICON_COLLAPSED
-			} else {
-				symbol::FOLDER_ICON_EXPANDED
-			}
-		} else {
-			symbol::EMPTY_STR
-		};
-
 		let available_width =
-			width.saturating_sub(indent_str.len() + path_arrow.len());
+			width.saturating_sub(indent_str.len().saturating_add(2));
+		let name_part = if selected {
+			format!("{path:available_width$}")
+		} else {
+			path.to_string()
+		};
+		let icon = if is_path {
+			icons::folder_icon(path, !item.kind().is_path_collapsed())
+		} else {
+			icons::file_icon(Path::new(item.info().full_path_str()))
+		};
+		let prefix = format!("{indent_str}");
+		let suffix = format!(" {name_part}");
+		let base_style = theme.file_tree_item(is_path, selected);
+		let icon_style = icon
+			.color
+			.map_or(base_style, |color| base_style.fg(color));
 
-		let path = format!(
-			"{indent_str}{path_arrow}{path:available_width$}"
-		);
-
-		Span::styled(path, theme.file_tree_item(is_path, selected))
+		Line::from(vec![
+			Span::styled(Cow::from(prefix), base_style),
+			Span::styled(Cow::from(icon.glyph), icon_style),
+			Span::styled(Cow::from(suffix), base_style),
+		])
 	}
 
 	fn blame(&self) -> bool {
@@ -294,7 +301,7 @@ impl RevisionFilesComponent {
 			.tree
 			.iterate(self.scroll.get_top(), tree_height)
 			.map(|(item, selected)| {
-				Self::tree_item_to_span(
+				Self::tree_item_to_line(
 					item,
 					&self.theme,
 					tree_width,

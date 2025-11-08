@@ -45,9 +45,6 @@ pub mod symbol {
 	pub const CHECKMARK: &str = "\u{2713}"; //✓
 	pub const SPACE: &str = "\u{02FD}"; //˽
 	pub const EMPTY_SPACE: &str = " ";
-	pub const FOLDER_ICON_COLLAPSED: &str = "\u{25b8}"; //▸
-	pub const FOLDER_ICON_EXPANDED: &str = "\u{25be}"; //▾
-	pub const EMPTY_STR: &str = "";
 	pub const ELLIPSIS: char = '\u{2026}'; // …
 }
 

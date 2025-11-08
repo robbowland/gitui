@@ -8,6 +8,7 @@ use super::{
 use crate::{
 	app::Environment,
 	components::{CommandInfo, Component, EventState},
+	icons,
 	keys::{key_match, SharedKeyConfig},
 	popups::{BlameFileOpen, FileRevOpen},
 	queue::{InternalEvent, NeedsUpdate, Queue, StackablePopupOpen},
@@ -17,7 +18,12 @@ use crate::{
 use anyhow::Result;
 use asyncgit::{hash, sync::CommitId, StatusItem, StatusItemType};
 use crossterm::event::Event;
-use ratatui::{layout::Rect, text::Span, Frame};
+use ratatui::{
+	layout::Rect,
+	style::Color,
+	text::{Line, Span},
+	Frame,
+};
 use std::{borrow::Cow, cell::Cell, path::Path};
 
 //TODO: use new `filetreelist` crate
@@ -157,7 +163,7 @@ impl StatusTreeComponent {
 		width: u16,
 		selected: bool,
 		theme: &'b SharedTheme,
-	) -> Option<Span<'b>> {
+	) -> Option<Line<'b>> {
 		let indent_str = if indent == 0 {
 			String::new()
 		} else {
@@ -172,49 +178,56 @@ impl StatusTreeComponent {
 			FileTreeItemKind::File(status_item) => {
 				let status_char =
 					Self::item_status_char(status_item.status);
-				let file = Path::new(&status_item.path)
+				let file_name = Path::new(&status_item.path)
 					.file_name()
 					.and_then(std::ffi::OsStr::to_str)
 					.expect("invalid path.");
-
-				let txt = if selected {
-					format!(
-						"{} {}{:w$}",
-						status_char,
-						indent_str,
-						file,
-						w = width as usize
-					)
+				let icon =
+					icons::file_icon(Path::new(&status_item.path));
+				let file_part = if selected {
+					format!("{file_name:w$}", w = width as usize)
 				} else {
-					format!("{status_char} {indent_str}{file}")
+					file_name.to_string()
 				};
+				let prefix = format!("{status_char} {indent_str}");
+				let suffix = format!(" {file_part}");
+				let base_style =
+					theme.item(status_item.status, selected);
+				let icon_style = icon
+					.color
+					.map_or(base_style, |color| base_style.fg(color));
 
-				Some(Span::styled(
-					Cow::from(txt),
-					theme.item(status_item.status, selected),
-				))
+				Some(Line::from(vec![
+					Span::styled(Cow::from(prefix), base_style),
+					Span::styled(Cow::from(icon.glyph), icon_style),
+					Span::styled(Cow::from(suffix), base_style),
+				]))
 			}
 
 			FileTreeItemKind::Path(path_collapsed) => {
-				let collapse_char =
-					if path_collapsed.0 { '▸' } else { '▾' };
-
-				let txt = if selected {
-					format!(
-						"  {}{}{:w$}",
-						indent_str,
-						collapse_char,
-						string,
-						w = width as usize
-					)
+				let is_open = !path_collapsed.0;
+				let folder_icon = icons::folder_icon(string, is_open);
+				let prefix = format!("  {indent_str}");
+				let name = if selected {
+					format!("{string:w$}", w = width as usize)
 				} else {
-					format!("  {indent_str}{collapse_char}{string}",)
+					string.to_string()
 				};
+				let suffix = format!(" {name}");
+				let text_style =
+					theme.text(true, selected).fg(Color::Blue);
+				let icon_style = folder_icon
+					.color
+					.map_or(text_style, |color| text_style.fg(color));
 
-				Some(Span::styled(
-					Cow::from(txt),
-					theme.text(true, selected),
-				))
+				Some(Line::from(vec![
+					Span::styled(Cow::from(prefix), text_style),
+					Span::styled(
+						Cow::from(folder_icon.glyph),
+						icon_style,
+					),
+					Span::styled(Cow::from(suffix), text_style),
+				]))
 			}
 		}
 	}
