@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * dx: `make check` checks Cargo.toml dependency ordering using `cargo sort` [[@naseschwarz](https://github.com/naseschwarz)]
 * add `use_selection_fg` to theme file to allow customizing selection foreground color [[@Upsylonbare](https://github.com/Upsylonbare)] ([#2515](https://github.com/gitui-org/gitui/pull/2515))
 * add `selection_bold` theme option to draw selected rows using a bold modifier
+* add `selection_italic` and `use_selection_bg` theme options for finer grained selection styling
 
 ### Changed
 * improve error messages [[@acuteenvy](https://github.com/acuteenvy)] ([#2617](https://github.com/gitui-org/gitui/pull/2617))
@@ -31,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * push: respect `branch.*.merge` when push default is upstream [[@vlad-anger](https://github.com/vlad-anger)] ([#2542](https://github.com/gitui-org/gitui/pull/2542))
 * set the terminal title to `gitui ({repo_path})` [[@acuteenvy](https://github.com/acuteenvy)] ([#2462](https://github.com/gitui-org/gitui/issues/2462))
 * respect `.mailmap` [[@acuteenvy](https://github.com/acuteenvy)] ([#2406](https://github.com/gitui-org/gitui/issues/2406))
+* default selection styling now uses bold + italic text without changing foreground/background colors (enable `use_selection_bg`/`use_selection_fg` to restore the previous look)
 
 ### Fixes
 * resolve `core.hooksPath` relative to `GIT_WORK_TREE` [[@naseschwarz](https://github.com/naseschwarz)] ([#2571](https://github.com/gitui-org/gitui/issues/2571))

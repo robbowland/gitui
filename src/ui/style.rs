@@ -17,7 +17,9 @@ pub struct Theme {
 	selection_bg: Color,
 	selection_fg: Color,
 	use_selection_fg: bool,
+	use_selection_bg: bool,
 	selection_bold: bool,
+	selection_italic: bool,
 	cmdbar_bg: Color,
 	disabled_fg: Color,
 	diff_line_add: Color,
@@ -68,7 +70,7 @@ impl Theme {
 		}
 		.fg(self.branch_fg);
 
-		let styled = if selected {
+		let styled = if selected && self.use_selection_bg {
 			branch.patch(Style::default().bg(self.selection_bg))
 		} else {
 			branch
@@ -97,27 +99,28 @@ impl Theme {
 	}
 
 	pub fn tags(&self, selected: bool) -> Style {
-		let style = Style::default()
+		let mut style = Style::default()
 			.fg(self.tag_fg)
-			.add_modifier(Modifier::BOLD)
-			.bg(if selected {
-				self.selection_bg
-			} else {
-				Color::Reset
-			});
+			.add_modifier(Modifier::BOLD);
+
+		if selected && self.use_selection_bg {
+			style = style.bg(self.selection_bg);
+		}
 
 		self.apply_selection_modifiers(style, selected)
 	}
 
 	pub fn text(&self, enabled: bool, selected: bool) -> Style {
-		let style = match (enabled, selected) {
+		let mut style = match (enabled, selected) {
 			(false, false) => Style::default().fg(self.disabled_fg),
-			(false, true) => Style::default().bg(self.selection_bg),
+			(false, true) => Style::default().fg(self.disabled_fg),
 			(true, false) => Style::default(),
-			(true, true) => Style::default()
-				.fg(self.command_fg)
-				.bg(self.selection_bg),
+			(true, true) => Style::default().fg(self.command_fg),
 		};
+
+		if selected && self.use_selection_bg {
+			style = style.bg(self.selection_bg);
+		}
 
 		self.apply_selection_modifiers(style, selected)
 	}
@@ -160,15 +163,16 @@ impl Theme {
 	}
 
 	fn apply_select(&self, style: Style, selected: bool) -> Style {
-		let style = if selected {
-			if self.use_selection_fg {
-				style.bg(self.selection_bg).fg(self.selection_fg)
-			} else {
-				style.bg(self.selection_bg)
+		let mut style = style;
+
+		if selected {
+			if self.use_selection_bg {
+				style = style.bg(self.selection_bg);
 			}
-		} else {
-			style
-		};
+			if self.use_selection_fg {
+				style = style.fg(self.selection_fg);
+			}
+		}
 
 		self.apply_selection_modifiers(style, selected)
 	}
@@ -178,11 +182,21 @@ impl Theme {
 		style: Style,
 		selected: bool,
 	) -> Style {
-		if selected && self.selection_bold {
-			style.add_modifier(Modifier::BOLD)
-		} else {
-			style
+		if !selected {
+			return style;
 		}
+
+		let mut style = style;
+
+		if self.selection_bold {
+			style = style.add_modifier(Modifier::BOLD);
+		}
+
+		if self.selection_italic {
+			style = style.add_modifier(Modifier::ITALIC);
+		}
+
+		style
 	}
 
 	pub fn apply_fg_override(
@@ -209,11 +223,15 @@ impl Theme {
 	}
 
 	pub fn diff_hunk_marker(&self, selected: bool) -> Style {
-		let style = if selected {
-			Style::default().bg(self.selection_bg)
+		let mut style = if selected {
+			Style::default()
 		} else {
 			Style::default().fg(self.disabled_fg)
 		};
+
+		if selected && self.use_selection_bg {
+			style = style.bg(self.selection_bg);
+		}
 
 		self.apply_selection_modifiers(style, selected)
 	}
@@ -375,8 +393,10 @@ impl Default for Theme {
 			command_fg: Color::White,
 			selection_bg: Color::Blue,
 			selection_fg: Color::White,
-			use_selection_fg: true,
-			selection_bold: false,
+			use_selection_fg: false,
+			use_selection_bg: false,
+			selection_bold: true,
+			selection_italic: true,
 			cmdbar_bg: Color::Blue,
 			disabled_fg: Color::DarkGray,
 			diff_line_add: Color::Green,
@@ -468,12 +488,26 @@ mod tests {
 	fn selection_bold_applies_to_selected_text() {
 		let mut theme = Theme::default();
 		theme.selection_bold = true;
+		theme.selection_italic = false;
 
 		let style = theme.text(true, true);
 		let expected = Style::default()
 			.fg(theme.command_fg)
-			.bg(theme.selection_bg)
 			.add_modifier(Modifier::BOLD);
+
+		assert_eq!(style, expected);
+	}
+
+	#[test]
+	fn selection_italic_applies_to_selected_text() {
+		let mut theme = Theme::default();
+		theme.selection_bold = false;
+		theme.selection_italic = true;
+
+		let style = theme.text(true, true);
+		let expected = Style::default()
+			.fg(theme.command_fg)
+			.add_modifier(Modifier::ITALIC);
 
 		assert_eq!(style, expected);
 	}
@@ -486,5 +520,20 @@ mod tests {
 		let style = theme.text(true, false);
 
 		assert_eq!(style, Style::default());
+	}
+
+	#[test]
+	fn selection_background_can_be_enabled() {
+		let mut theme = Theme::default();
+		theme.use_selection_bg = true;
+		theme.selection_bold = false;
+		theme.selection_italic = false;
+
+		let style = theme.text(true, true);
+		let expected = Style::default()
+			.fg(theme.command_fg)
+			.bg(theme.selection_bg);
+
+		assert_eq!(style, expected);
 	}
 }

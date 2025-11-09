@@ -22,7 +22,10 @@ Example theme override:
 (
     selection_bg: Some("Blue"),
     selection_fg: Some("#ffffff"),
+    use_selection_fg: Some(true),
+    use_selection_bg: Some(true),
     selection_bold: Some(true),
+    selection_italic: Some(true),
 )
 ```
 
@@ -78,16 +81,21 @@ Note that if you want to turn it off, you should use a blank string:
 ```
 ## Customizing selection
 
-By default the `selection_fg` color is used to color the text of the selected line.
-Diff line, filename, commit hashes, time and author are re-colored with `selection_fg` color.
-This can be changed by specifying the `use_selection_fg` boolean in your `theme.ron`:
+By default selection is indicated using bold and italic text modifiers without changing foreground or background colors.
+You can opt back into the previous background highlight or override colors via the following booleans:
 
-```
+```ron
 (
-    use_selection_fg: Some(false),
-    selection_bold: Some(true),
+    use_selection_bg: Some(true),
+    use_selection_fg: Some(true),
+    selection_bold: Some(false),
+    selection_italic: Some(false),
 )
 ```
 
-Set `selection_bold` to `Some(true)` to draw selected rows using the bold modifier (default is `false`).
-By default, `use_selection_fg` is set to `true`.
+* `use_selection_bg` (default `false`) controls whether selected rows are rendered with `selection_bg`.
+* `use_selection_fg` (default `false`) controls whether selected rows use `selection_fg`.
+* `selection_bold` (default `true`) toggles the bold modifier.
+* `selection_italic` (default `true`) toggles the italic modifier.
+
+When `use_selection_fg` is enabled, diff lines, filenames, commit hashes, times and authors are re-colored with `selection_fg`.
