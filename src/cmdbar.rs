@@ -30,11 +30,9 @@ pub struct CommandBar {
 	key_config: SharedKeyConfig,
 	lines: u16,
 	width: u16,
-	expandable: bool,
+	has_entries: bool,
 	expanded: bool,
 }
-
-const MORE_WIDTH: u16 = 9;
 
 impl CommandBar {
 	pub const fn new(
@@ -48,7 +46,7 @@ impl CommandBar {
 			key_config,
 			lines: 0,
 			width: 0,
-			expandable: false,
+			has_entries: false,
 			expanded: false,
 		}
 	}
@@ -60,35 +58,15 @@ impl CommandBar {
 		}
 	}
 
-	fn is_multiline(&self, width: u16) -> bool {
-		let mut line_width = 0_usize;
-		for c in &self.cmd_infos {
-			let entry_w =
-				UnicodeWidthStr::width(c.text.name.as_str());
-
-			if line_width + entry_w > width as usize {
-				return true;
-			}
-
-			line_width += entry_w + 1;
-		}
-
-		false
-	}
-
 	fn refresh_list(&mut self, width: u16) {
 		self.draw_list.clear();
 
-		let width = if self.is_multiline(width) {
-			width.saturating_sub(MORE_WIDTH)
-		} else {
-			width
-		};
-
 		let mut line_width = 0_usize;
 		let mut lines = 1_u16;
+		let mut has_entries = false;
 
 		for c in &self.cmd_infos {
+			has_entries = true;
 			let entry_w =
 				UnicodeWidthStr::width(c.text.name.as_str());
 
@@ -108,9 +86,16 @@ impl CommandBar {
 			}));
 		}
 
-		self.expandable = lines > 1;
+		if !has_entries {
+			lines = 0;
+		}
 
+		self.has_entries = has_entries;
 		self.lines = lines;
+
+		if !self.has_entries {
+			self.expanded = false;
+		}
 	}
 
 	pub fn set_cmds(&mut self, cmds: Vec<CommandInfo>) {
@@ -123,21 +108,25 @@ impl CommandBar {
 	}
 
 	pub const fn height(&self) -> u16 {
-		if self.expandable && self.expanded {
+		if self.expanded && self.has_entries {
 			self.lines
 		} else {
-			1_u16
+			0_u16
 		}
 	}
 
 	pub fn toggle_more(&mut self) {
-		if self.expandable {
+		if self.has_entries {
 			self.expanded = !self.expanded;
 		}
 	}
 
 	pub fn draw(&self, f: &mut Frame, r: Rect) {
-		if r.width < MORE_WIDTH {
+		if r.width == 0 || r.height == 0 || !self.expanded {
+			return;
+		}
+
+		if !self.has_entries {
 			return;
 		}
 		let splitter = Span::raw(Cow::from(strings::cmd_splitter(
@@ -175,26 +164,5 @@ impl CommandBar {
 			Paragraph::new(texts).alignment(Alignment::Left),
 			r,
 		);
-
-		if self.expandable {
-			let r = Rect::new(
-				r.width.saturating_sub(MORE_WIDTH),
-				r.y + r.height.saturating_sub(1),
-				MORE_WIDTH.min(r.width),
-				1.min(r.height),
-			);
-
-			f.render_widget(
-				Paragraph::new(Line::from(vec![Span::raw(
-					Cow::from(if self.expanded {
-						"less [.]"
-					} else {
-						"more [.]"
-					}),
-				)]))
-				.alignment(Alignment::Right),
-				r,
-			);
-		}
 	}
 }

@@ -194,9 +194,7 @@ impl StatusTreeComponent {
 				let base_style =
 					theme.item(status_item.status, selected);
 				let icon_style = theme.apply_fg_override(
-					base_style,
-					icon.color,
-					selected,
+					base_style, icon.color, selected,
 				);
 
 				Some(Line::from(vec![

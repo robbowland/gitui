@@ -1302,6 +1302,15 @@ impl App {
 			)
 			.order(order::NAV),
 		);
+		res.push(
+			CommandInfo::new(
+				strings::commands::toggle_key_help(&self.key_config),
+				true,
+				!self.any_popup_visible(),
+			)
+			.hidden()
+			.order(order::NAV),
+		);
 
 		res.push(
 			CommandInfo::new(

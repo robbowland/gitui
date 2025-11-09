@@ -159,11 +159,7 @@ impl Theme {
 		self.apply_select(style, selected)
 	}
 
-	fn apply_select(
-		&self,
-		style: Style,
-		selected: bool,
-	) -> Style {
+	fn apply_select(&self, style: Style, selected: bool) -> Style {
 		let style = if selected {
 			if self.use_selection_fg {
 				style.bg(self.selection_bg).fg(self.selection_fg)

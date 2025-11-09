@@ -597,6 +597,18 @@ pub mod commands {
 			CMD_GROUP_GENERAL,
 		)
 	}
+	pub fn toggle_key_help(
+		key_config: &SharedKeyConfig,
+	) -> CommandText {
+		CommandText::new(
+			format!(
+				"Key help [{}]",
+				key_config.get_hint(key_config.keys.cmd_bar_toggle)
+			),
+			"toggle the shortcut key list",
+			CMD_GROUP_GENERAL,
+		)
+	}
 	pub fn navigate_commit_message(
 		key_config: &SharedKeyConfig,
 	) -> CommandText {
