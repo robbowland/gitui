@@ -99,3 +99,24 @@ You can opt back into the previous background highlight or override colors via t
 * `selection_italic` (default `true`) toggles the italic modifier.
 
 When `use_selection_fg` is enabled, diff lines, filenames, commit hashes, times and authors are re-colored with `selection_fg`.
+
+## Status tree colors
+
+You can configure different colours for selected and unselected items in the status tree by setting the following theme options. When the `selected` version is not provided, the colour falls back to the existing default (e.g. `diff_file_added` for added files), so the tree behaves as before unless you override one of these values.
+
+```ron
+(
+    status_new_unselected_fg: Some("DarkGreen"),
+    status_modified_unselected_fg: Some("DarkYellow"),
+    status_deleted_unselected_fg: Some("DarkRed"),
+    status_renamed_unselected_fg: Some("LightMagenta"),
+    status_conflicted_unselected_fg: Some("Yellow"),
+    status_typechange_unselected_fg: Some("Gray"),
+    file_tree_path_selected_fg: Some("Cyan"),
+    file_tree_path_unselected_fg: Some("DarkCyan"),
+    file_tree_path_icon_selected_fg: Some("Cyan"),
+    file_tree_path_icon_unselected_fg: Some("DarkCyan"),
+)
+```
+
+The `file_tree_path_*` fields control how folder names and icons inside the status tree are rendered (selected vs. unselected). Setting them to dimmer colours makes the unselected rows appear "grayed out" without affecting selection styling.

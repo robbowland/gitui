@@ -20,6 +20,16 @@ pub struct Theme {
 	use_selection_bg: bool,
 	selection_bold: bool,
 	selection_italic: bool,
+	file_tree_path_selected_fg: Color,
+	file_tree_path_unselected_fg: Color,
+	file_tree_path_icon_selected_fg: Color,
+	file_tree_path_icon_unselected_fg: Color,
+	status_new_unselected_fg: Color,
+	status_modified_unselected_fg: Color,
+	status_deleted_unselected_fg: Color,
+	status_renamed_unselected_fg: Color,
+	status_conflicted_unselected_fg: Color,
+	status_typechange_unselected_fg: Color,
 	cmdbar_bg: Color,
 	disabled_fg: Color,
 	diff_line_add: Color,
@@ -126,24 +136,51 @@ impl Theme {
 	}
 
 	pub fn item(&self, typ: StatusItemType, selected: bool) -> Style {
-		let style = match typ {
-			StatusItemType::New => {
-				Style::default().fg(self.diff_file_added)
-			}
-			StatusItemType::Modified => {
-				Style::default().fg(self.diff_file_modified)
-			}
-			StatusItemType::Deleted => {
-				Style::default().fg(self.diff_file_removed)
-			}
-			StatusItemType::Renamed => {
-				Style::default().fg(self.diff_file_moved)
-			}
-			StatusItemType::Conflicted => Style::default()
-				.fg(self.diff_file_modified)
-				.add_modifier(Modifier::BOLD),
-			StatusItemType::Typechange => Style::default(),
+		let selected_fg = match typ {
+			StatusItemType::New => self.diff_file_added,
+			StatusItemType::Modified => self.diff_file_modified,
+			StatusItemType::Deleted => self.diff_file_removed,
+			StatusItemType::Renamed => self.diff_file_moved,
+			StatusItemType::Conflicted => self.diff_file_modified,
+			StatusItemType::Typechange => Color::Reset,
 		};
+
+		let unselected_fg = match typ {
+			StatusItemType::New => self.resolve_unselected(
+				self.status_new_unselected_fg,
+				typ,
+			),
+			StatusItemType::Modified => self.resolve_unselected(
+				self.status_modified_unselected_fg,
+				typ,
+			),
+			StatusItemType::Deleted => self.resolve_unselected(
+				self.status_deleted_unselected_fg,
+				typ,
+			),
+			StatusItemType::Renamed => self.resolve_unselected(
+				self.status_renamed_unselected_fg,
+				typ,
+			),
+			StatusItemType::Conflicted => self.resolve_unselected(
+				self.status_conflicted_unselected_fg,
+				typ,
+			),
+			StatusItemType::Typechange => self.resolve_unselected(
+				self.status_typechange_unselected_fg,
+				typ,
+			),
+		};
+
+		let mut style = Style::default().fg(if selected {
+			selected_fg
+		} else {
+			unselected_fg
+		});
+
+		if typ == StatusItemType::Conflicted {
+			style = style.add_modifier(Modifier::BOLD);
+		}
 
 		self.apply_select(style, selected)
 	}
@@ -160,6 +197,49 @@ impl Theme {
 		};
 
 		self.apply_select(style, selected)
+	}
+
+	pub fn file_tree_path_style(&self, selected: bool) -> Style {
+		let color = if selected {
+			self.file_tree_path_selected_fg
+		} else {
+			self.file_tree_path_unselected_fg
+		};
+
+		self.apply_select(Style::default().fg(color), selected)
+	}
+
+	pub fn file_tree_path_icon_style(&self, selected: bool) -> Style {
+		let color = if selected {
+			self.file_tree_path_icon_selected_fg
+		} else {
+			self.file_tree_path_icon_unselected_fg
+		};
+
+		self.apply_select(Style::default().fg(color), selected)
+	}
+
+	fn default_status_unselected_fg(typ: StatusItemType) -> Color {
+		match typ {
+			StatusItemType::New => Color::Green,
+			StatusItemType::Modified => Color::Yellow,
+			StatusItemType::Deleted => Color::Red,
+			StatusItemType::Renamed => Color::LightMagenta,
+			StatusItemType::Conflicted => Color::LightYellow,
+			StatusItemType::Typechange => Color::Gray,
+		}
+	}
+
+	fn resolve_unselected(
+		&self,
+		override_color: Color,
+		typ: StatusItemType,
+	) -> Color {
+		if override_color == Color::Reset {
+			Self::default_status_unselected_fg(typ)
+		} else {
+			override_color
+		}
 	}
 
 	fn apply_select(&self, style: Style, selected: bool) -> Style {
@@ -364,6 +444,7 @@ impl Theme {
 	}
 
 	pub fn init(theme_path: &PathBuf) -> Self {
+		log::info!("Loading theme from {}", theme_path.display());
 		let mut theme = Self::default();
 
 		if let Ok(patch) = Self::load_patch(theme_path).map_err(|e| {
@@ -397,6 +478,16 @@ impl Default for Theme {
 			use_selection_bg: false,
 			selection_bold: true,
 			selection_italic: true,
+			file_tree_path_selected_fg: Color::Blue,
+			file_tree_path_unselected_fg: Color::Blue,
+			file_tree_path_icon_selected_fg: Color::Blue,
+			file_tree_path_icon_unselected_fg: Color::Blue,
+			status_new_unselected_fg: Color::Reset,
+			status_modified_unselected_fg: Color::Reset,
+			status_deleted_unselected_fg: Color::Reset,
+			status_renamed_unselected_fg: Color::Reset,
+			status_conflicted_unselected_fg: Color::Reset,
+			status_typechange_unselected_fg: Color::Reset,
 			cmdbar_bg: Color::Blue,
 			disabled_fg: Color::DarkGray,
 			diff_line_add: Color::Green,

@@ -20,7 +20,6 @@ use asyncgit::{hash, sync::CommitId, StatusItem, StatusItemType};
 use crossterm::event::Event;
 use ratatui::{
 	layout::Rect,
-	style::Color,
 	text::{Line, Span},
 	Frame,
 };
@@ -214,16 +213,9 @@ impl StatusTreeComponent {
 					string.to_string()
 				};
 				let suffix = format!(" {name}");
-				let text_style = theme.apply_fg_override(
-					theme.text(true, selected),
-					Some(Color::Blue),
-					selected,
-				);
-				let icon_style = theme.apply_fg_override(
-					text_style,
-					folder_icon.color,
-					selected,
-				);
+				let text_style = theme.file_tree_path_style(selected);
+				let icon_style =
+					theme.file_tree_path_icon_style(selected);
 
 				Some(Line::from(vec![
 					Span::styled(Cow::from(prefix), text_style),
