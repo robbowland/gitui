@@ -192,9 +192,13 @@ impl StatusTreeComponent {
 				let suffix = format!(" {file_part}");
 				let base_style =
 					theme.item(status_item.status, selected);
-				let icon_style = theme.apply_fg_override(
-					base_style, icon.color, selected,
-				);
+				let icon_style = if selected {
+					theme.apply_fg_override(
+						base_style, icon.color, selected,
+					)
+				} else {
+					base_style
+				};
 
 				Some(Line::from(vec![
 					Span::styled(Cow::from(prefix), base_style),
